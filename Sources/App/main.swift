@@ -1,4 +1,5 @@
 import Vapor
+import CoreLocation
 import VaporPostgreSQL
 
 let drop = Droplet(
@@ -14,20 +15,17 @@ drop.get("list/atm") { request in
 }
 
 drop.post("atm") { request in
-    guard let address = request.data["address"]?.string else {
-        throw Abort.badRequest
-    }
     
-    var atm = ATM(address: address)
+    var atm = try ATM(node: request.json)
     
     do {
         try atm.save()
     } catch {
-        throw Abort.badRequest
+        throw Abort.custom(status: .badRequest, message: request.description)
     }
     
     return atm
-}
+} 
 
 drop.get("version") { request in
     if let db = drop.database?.driver as? PostgreSQLDriver {
